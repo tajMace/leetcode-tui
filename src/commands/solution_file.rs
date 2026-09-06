@@ -1,9 +1,10 @@
 use std::{fs, path::PathBuf};
 
 use crate::{
+    cache::load_cached_problem_list,
     config::Config,
     error::{LeetCodeError, Result},
-    models::{LangSlug, Problem, SOLUTION_MARKER},
+    models::{LangSlug, Problem, ProblemSummary, SOLUTION_MARKER},
 };
 
 pub fn generate_spec_file(question: &Problem) -> Result<String> {
@@ -92,9 +93,13 @@ fn get_solution_code(contents: &str) -> String {
  */
 
 pub fn get_challenge_dir(slug: &str) -> Result<PathBuf> {
+    let problem = find_problem_by_slug(slug)?;
     let config = Config::load()?;
     let base_path = config.require_storage_dir()?;
-    Ok(base_path.join("src/problems").join(slug))
+
+    Ok(base_path
+        .join("src/problems")
+        .join(format!("{}-{}", problem.id, slug)))
 }
 
 pub fn get_challenge_filepath(slug: &str, lang: LangSlug) -> Result<PathBuf> {
@@ -107,4 +112,12 @@ pub fn get_spec_filepath(slug: &str) -> Result<PathBuf> {
     let challenge_dir = get_challenge_dir(slug)?;
     let challenge = format!("SPEC.md");
     Ok(challenge_dir.join(challenge))
+}
+
+fn find_problem_by_slug(slug: &str) -> Result<ProblemSummary> {
+    let problems = load_cached_problem_list()?;
+    problems
+        .into_iter()
+        .find(|p| p.title_slug == slug)
+        .ok_or_else(|| LeetCodeError::NotInCache)
 }

@@ -42,6 +42,9 @@ pub enum LeetCodeError {
     #[error("problem already pulled: use 'pull <slug> --force' for a hard reset")]
     AlreadyPulled(String),
 
+    #[error("requested problem not in cache: either stale, or malformed problem slug")]
+    NotInCache,
+
     #[error("html parse succeeded, but still had no content")]
     NoMdContent,
 
