@@ -29,6 +29,11 @@ pub enum Command {
     Login,
     List,
     Refresh,
+    Remove {
+        slug: String,
+        #[arg(long)]
+        lang: Option<LangSlug>,
+    },
 }
 
 #[derive(Debug, Parser)]

@@ -2,19 +2,31 @@
 // allows for Rust verification in the IDE, without being in a /bin
 
 use crate::{commands::get_challenge_filepath, config::Config, error::Result, models::LangSlug};
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path};
 
 pub fn add_bin_entry(slug: &str) -> Result<()> {
     let file_stem = slug.replace('-', "_");
     let filepath = get_challenge_filepath(slug, LangSlug::Rust)?;
+
     let mut doc: toml::Table = get_cargo_toml_contents()?;
     let bin_array = get_or_create_bin_array(&mut doc);
 
     if !bin_entry_exists(bin_array, &file_stem) {
         insert_to_bin_array(bin_array, &file_stem, &filepath);
+        write_cargo_toml_contents(&doc)?;
+    }
+
+    Ok(())
+}
+
+pub fn remove_bin_entry(slug: &str) -> Result<()> {
+    let file_stem = slug.replace('-', "_");
+
+    let mut doc: toml::Table = get_cargo_toml_contents()?;
+    let bin_array = get_or_create_bin_array(&mut doc);
+
+    if bin_entry_exists(bin_array, &file_stem) {
+        remove_from_bin_array(bin_array, &file_stem);
         write_cargo_toml_contents(&doc)?;
     }
 
@@ -54,6 +66,10 @@ fn insert_to_bin_array(bin_array: &mut Vec<toml::Value>, file_stem: &str, filepa
         toml::Value::String(filepath.to_string_lossy().to_string()),
     );
     bin_array.push(toml::Value::Table(new_entry));
+}
+
+fn remove_from_bin_array(bin_array: &mut Vec<toml::Value>, file_stem: &str) {
+    bin_array.retain(|entry| entry.get("name").and_then(|n| n.as_str()) != Some(file_stem));
 }
 
 fn write_cargo_toml_contents(doc: &toml::Table) -> Result<()> {

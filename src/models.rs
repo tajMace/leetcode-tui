@@ -195,12 +195,21 @@ impl ProblemSummary {
 #[derive(Serialize, Deserialize, Default)]
 #[serde(transparent)]
 pub struct PulledLanguages {
-    map: HashMap<String, HashSet<LangSlug>>,
+    pub map: HashMap<String, HashSet<LangSlug>>,
 }
 
 impl PulledLanguages {
     pub fn mark_pulled(&mut self, id: &str, lang: LangSlug) {
         self.map.entry(id.to_string()).or_default().insert(lang);
+    }
+
+    pub fn mark_not_pulled(&mut self, id: &str, lang: LangSlug) {
+        if let Some(langs) = self.map.get_mut(id) {
+            langs.remove(&lang);
+            if langs.is_empty() {
+                self.map.remove(id);
+            }
+        }
     }
 
     pub fn is_pulled(&self, id: &str) -> bool {

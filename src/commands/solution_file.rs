@@ -114,7 +114,7 @@ pub fn get_spec_filepath(slug: &str) -> Result<PathBuf> {
     Ok(challenge_dir.join(challenge))
 }
 
-fn find_problem_by_slug(slug: &str) -> Result<ProblemSummary> {
+pub fn find_problem_by_slug(slug: &str) -> Result<ProblemSummary> {
     let problems = load_cached_problem_list()?;
     problems
         .into_iter()

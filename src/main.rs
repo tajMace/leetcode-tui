@@ -24,6 +24,7 @@ fn main() {
         cli::Command::Login => commands::login(),
         cli::Command::List => commands::list(),
         cli::Command::Refresh => cache::download_and_save_problem_list(),
+        cli::Command::Remove { slug, lang } => commands::remove(slug, lang),
     };
 
     if let Err(e) = result {
