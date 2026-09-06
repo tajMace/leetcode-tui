@@ -57,6 +57,11 @@ pub enum LeetCodeError {
     #[error("Response in an unexpected format: {0}")]
     MalformedResponse(String),
 
+    #[error(
+        "You do not currently hold a paid LeetCode subscription: you cannot access this question"
+    )]
+    UnpaidAccount,
+
     /* Status Error Series */
     // 401/403
     #[error("failed to authenticate token: use 'login' command to refresh saved tokens")]

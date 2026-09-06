@@ -4,14 +4,17 @@
 use crate::error::{LeetCodeError, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::fmt;
+use std::{
+    collections::{HashMap, HashSet},
+    fmt,
+};
 
 pub const SOLUTION_MARKER: &str = "/* ---------- SOLUTION START ---------- */";
 
 /*
  * ========== LangSlug Model ==========
  */
-#[derive(PartialEq, Eq, Deserialize, Serialize, Debug, Clone, Copy, clap::ValueEnum)]
+#[derive(PartialEq, Eq, Deserialize, Hash, Serialize, Debug, Clone, Copy, clap::ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum LangSlug {
     Cpp,
@@ -116,6 +119,11 @@ impl Problem {
             .and_then(|d| d.get("question"))
             .filter(|q| !q.is_null())
             .ok_or_else(|| LeetCodeError::ProblemNotFound(slug.to_string()))?;
+
+        if Self::paid_question_requires_subscription(question_json) {
+            return Err(LeetCodeError::UnpaidAccount);
+        }
+
         Ok(serde_json::from_value(question_json.clone())?)
     }
 
@@ -124,8 +132,22 @@ impl Problem {
         Self::from_graphql_value(&root, slug)
     }
 
-    pub fn lang_snippet(&self, lang: &LangSlug) -> Option<&CodeSnippet> {
-        self.code_snippets.iter().find(|s| s.lang_slug == *lang)
+    pub fn lang_snippet(&self, lang: LangSlug) -> Option<&CodeSnippet> {
+        self.code_snippets.iter().find(|s| s.lang_slug == lang)
+    }
+
+    /* helpers */
+    pub fn paid_question_requires_subscription(question_json: &Value) -> bool {
+        let is_paid_only = question_json
+            .get("isPaidOnly")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        let content_is_missing = question_json
+            .get("content")
+            .map(|c| c.is_null())
+            .unwrap_or(true);
+
+        is_paid_only && content_is_missing
     }
 }
 
@@ -165,6 +187,27 @@ impl ProblemSummary {
 
     pub fn solved(&self) -> bool {
         self.status.as_deref() == Some("ac")
+    }
+}
+
+// maps id -> the set of pulled language files
+#[derive(Serialize, Deserialize, Default)]
+#[serde(transparent)]
+pub struct PulledLanguages {
+    map: HashMap<String, HashSet<LangSlug>>,
+}
+
+impl PulledLanguages {
+    pub fn mark_pulled(&mut self, id: &str, lang: LangSlug) {
+        self.map.entry(id.to_string()).or_default().insert(lang);
+    }
+
+    pub fn is_pulled(&self, id: &str) -> bool {
+        self.map.contains_key(id)
+    }
+
+    pub fn is_pulled_in_language(&self, id: &str, lang: LangSlug) -> bool {
+        self.map.get(id).is_some_and(|langs| langs.contains(&lang))
     }
 }
 
@@ -437,7 +480,7 @@ mod tests {
                 assert_eq!(question.difficulty, Difficulty::Easy);
 
                 let snippet = question
-                    .lang_snippet(&LangSlug::Rust)
+                    .lang_snippet(LangSlug::Rust)
                     .expect("Expected to find a Rust snippet in the parsed payload");
 
                 assert_eq!(snippet.lang, "Rust");

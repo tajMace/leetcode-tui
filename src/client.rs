@@ -10,7 +10,7 @@ use std::cell::RefCell;
 use std::time::{Duration, Instant};
 
 const LEETCODE_GRAPHQL_ENDPOINT: &str = "https://leetcode.com/graphql/";
-const FETCH_QUESTION_QUERY: &str = "query fetchProblem($titleSlug: String!) {
+const FETCH_PROBLEM_QUERY: &str = "query fetchProblem($titleSlug: String!) {
   question(titleSlug: $titleSlug) {
     questionId
     questionFrontendId
@@ -78,8 +78,8 @@ impl LeetCodeClient {
             .json()?)
     }
 
-    pub fn fetch_question(&self, slug: &str) -> Result<Problem> {
-        let query = FETCH_QUESTION_QUERY;
+    pub fn fetch_problem(&self, slug: &str) -> Result<Problem> {
+        let query = FETCH_PROBLEM_QUERY;
         let variables = serde_json::json!({
             "titleSlug": slug
         });
@@ -90,17 +90,13 @@ impl LeetCodeClient {
     /// Runs a solution against a problem's visible example testcases via
     /// LeetCode's `interpret_solution/` endpoint (the "Run" button, not a
     /// real submission)
-    pub fn run_testcases(
-        &self,
-        question: &Problem,
-        solution: &ParsedSolution,
-    ) -> Result<RunResult> {
-        let slug = &question.title_slug;
+    pub fn run_testcases(&self, problem: &Problem, solution: &ParsedSolution) -> Result<RunResult> {
+        let slug = &problem.title_slug;
         let body = serde_json::json!({
             "lang": solution.lang.as_str(),
             "question_id": &solution.question_id,
             "typed_code": solution.typed_code,
-            "data_input": question.example_testcase_list.join("\n")
+            "data_input": problem.example_testcase_list.join("\n")
         });
 
         let interpret_id = self.start_judge(slug, "interpret_solution", &body)?;
@@ -109,10 +105,10 @@ impl LeetCodeClient {
 
     pub fn submit_solution(
         &self,
-        question: &Problem,
+        problem: &Problem,
         solution: &ParsedSolution,
     ) -> Result<SubmissionResult> {
-        let slug = &question.title_slug;
+        let slug = &problem.title_slug;
         let body = serde_json::json!({
             "lang": solution.lang.as_str(),
             "question_id": &solution.question_id,
@@ -265,7 +261,7 @@ mod client_tests {
 
     fn two_sum_question(client: &LeetCodeClient) -> Problem {
         client
-            .fetch_question("two-sum")
+            .fetch_problem("two-sum")
             .expect("should fetch two-sum")
     }
 
@@ -372,7 +368,7 @@ mod submit_tests {
 
     fn two_sum_question(client: &LeetCodeClient) -> Problem {
         client
-            .fetch_question("two-sum")
+            .fetch_problem("two-sum")
             .expect("should fetch two-sum")
     }
 

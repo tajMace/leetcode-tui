@@ -3,10 +3,10 @@
 use clap::ValueEnum;
 
 use crate::{
-    cache::{self, load_cached_problem_list},
+    cache::{self, backfill_pulled_from_disk, load_cached_problem_list},
     commands,
     error::Result,
-    models::{LangSlug, ProblemSummary},
+    models::{LangSlug, ProblemSummary, PulledLanguages},
     tui::app::Mode::ProblemList,
 };
 
@@ -19,6 +19,7 @@ pub enum Mode {
 pub struct App {
     // problem (meta)data
     pub problems: Vec<ProblemSummary>,
+    pub pulled: PulledLanguages,
     pub problem_selected: usize,
     pub should_quit: bool,
 
@@ -29,9 +30,10 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(problems: Vec<ProblemSummary>) -> Self {
+    pub fn new(problems: Vec<ProblemSummary>, pulled: PulledLanguages) -> Self {
         Self {
             problems,
+            pulled,
             problem_selected: 0,
             should_quit: false,
 
@@ -57,7 +59,11 @@ impl App {
 
     pub fn pull_selected_problem(&mut self) -> Result<()> {
         let slug = self.problems[self.problem_selected].title_slug.clone();
-        commands::pull(slug, self.lang_options[self.lang_selected])?;
+        let id = self.problems[self.problem_selected].id.clone();
+        let lang = self.lang_options[self.lang_selected];
+
+        commands::pull(slug, lang)?;
+        self.pulled.mark_pulled(&id, lang);
         self.close_language_selection();
 
         Ok(())
@@ -66,6 +72,7 @@ impl App {
     pub fn pull_problem_list(&mut self) -> Result<()> {
         cache::download_and_save_problem_list()?;
         self.problems = load_cached_problem_list()?;
+        self.pulled = backfill_pulled_from_disk(&self.problems)?;
 
         Ok(())
     }
@@ -86,5 +93,10 @@ impl App {
 
     pub fn close_language_selection(&mut self) {
         self.mode = Mode::ProblemList;
+    }
+
+    /* ===== pub helpers ===== */
+    pub fn selected_problem(&self) -> &ProblemSummary {
+        &self.problems[self.problem_selected]
     }
 }

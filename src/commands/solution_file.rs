@@ -26,7 +26,7 @@ fn preprocess_sup_in_code(html: &str) -> String {
 /*
  * helper function to transform a pulled object into a file
  */
-pub fn generate_problem_file(question: &Problem, lang: &LangSlug) -> Result<String> {
+pub fn generate_problem_file(question: &Problem, lang: LangSlug) -> Result<String> {
     let snippet = question
         .lang_snippet(lang)
         .ok_or_else(|| LeetCodeError::UnsupportedLanguage(lang.as_str().to_string()))?;
@@ -54,13 +54,13 @@ pub struct ParsedSolution {
     pub typed_code: String,
 }
 
-pub fn read_and_parse_solution_file(slug: &str, lang: &LangSlug) -> Result<ParsedSolution> {
+pub fn read_and_parse_solution_file(slug: &str, lang: LangSlug) -> Result<ParsedSolution> {
     let filepath = get_challenge_filepath(slug, lang)?;
     let contents = fs::read_to_string(filepath)?;
     Ok(parse_solution_file(&contents, lang))
 }
 
-fn parse_solution_file(contents: &str, lang: &LangSlug) -> ParsedSolution {
+fn parse_solution_file(contents: &str, lang: LangSlug) -> ParsedSolution {
     ParsedSolution {
         question_id: get_question_id(contents),
         lang: lang.clone(),
@@ -97,7 +97,7 @@ pub fn get_challenge_dir(slug: &str) -> Result<PathBuf> {
     Ok(base_path.join("src/problems").join(slug))
 }
 
-pub fn get_challenge_filepath(slug: &str, lang: &LangSlug) -> Result<PathBuf> {
+pub fn get_challenge_filepath(slug: &str, lang: LangSlug) -> Result<PathBuf> {
     let challenge_dir = get_challenge_dir(slug)?;
     let challenge = format!("q.{ext}", ext = lang.file_extension());
     Ok(challenge_dir.join(challenge))

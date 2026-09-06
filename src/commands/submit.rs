@@ -8,10 +8,10 @@ use crate::{
 };
 
 pub fn submit(slug: String, lang: LangSlug) -> Result<()> {
-    let solution = read_and_parse_solution_file(&slug, &lang)?;
+    let solution = read_and_parse_solution_file(&slug, lang)?;
 
     let client = LeetCodeClient::new()?;
-    let question = client.fetch_question(&slug)?;
+    let question = client.fetch_problem(&slug)?;
     let result = client.submit_solution(&question, &solution)?;
 
     print_submission_result(&result);

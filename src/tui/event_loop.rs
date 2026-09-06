@@ -10,20 +10,24 @@ use ratatui::{
 
 use crate::{
     error::Result,
-    models::ProblemSummary,
+    models::{ProblemSummary, PulledLanguages},
     tui::app::{App, Mode},
 };
 
-pub fn run(problems: Vec<ProblemSummary>) -> Result<()> {
+pub fn run(problems: Vec<ProblemSummary>, pulled: PulledLanguages) -> Result<()> {
     let mut terminal = ratatui::init();
-    let result = run_event_loop(&mut terminal, problems);
+    let result = run_event_loop(&mut terminal, problems, pulled);
     ratatui::restore();
 
     result
 }
 
-fn run_event_loop(terminal: &mut DefaultTerminal, problems: Vec<ProblemSummary>) -> Result<()> {
-    let mut app = App::new(problems);
+fn run_event_loop(
+    terminal: &mut DefaultTerminal,
+    problems: Vec<ProblemSummary>,
+    pulled: PulledLanguages,
+) -> Result<()> {
+    let mut app = App::new(problems, pulled);
 
     while !app.should_quit {
         terminal.draw(|frame| render(frame, &app))?;
@@ -64,7 +68,13 @@ fn render_problem_list(frame: &mut Frame, app: &App) {
         .problems
         .iter()
         .map(|p| {
-            let tick = if p.solved() { "✓" } else { " " };
+            let tick = if p.solved() {
+                "✓"
+            } else if app.pulled.is_pulled(&p.id) {
+                "●"
+            } else {
+                " "
+            };
             ListItem::new(format!(
                 "[{tick}] {} - {} ({:?})",
                 p.id, p.title, p.difficulty
@@ -83,10 +93,18 @@ fn render_problem_list(frame: &mut Frame, app: &App) {
 }
 
 fn render_language_dropdown(frame: &mut Frame, app: &App) {
+    let selected_id = &app.selected_problem().id;
     let items: Vec<ListItem> = app
         .lang_options
         .iter()
-        .map(|lang| ListItem::new(lang.as_str()))
+        .map(|lang| {
+            let pulled_marker = if app.pulled.is_pulled_in_language(selected_id, *lang) {
+                " ● "
+            } else {
+                "   "
+            };
+            ListItem::new(format!("{pulled_marker}{}", lang.as_str()))
+        })
         .collect();
 
     let list = List::new(items)
