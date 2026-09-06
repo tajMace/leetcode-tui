@@ -168,6 +168,7 @@ pub struct ProblemSummary {
     pub title_slug: String,
     pub difficulty: Difficulty,
     pub status: Option<String>,
+    pub paid_only: bool,
 }
 
 impl ProblemSummary {

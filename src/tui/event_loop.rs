@@ -4,13 +4,13 @@ use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Flex, Layout, Rect},
-    style::Style,
+    style::{Color, Modifier, Style},
     widgets::{Block, List, ListItem, ListState},
 };
 
 use crate::{
     error::Result,
-    models::{ProblemSummary, PulledLanguages},
+    models::{Difficulty, ProblemSummary, PulledLanguages},
     tui::app::{App, Mode},
 };
 
@@ -67,29 +67,47 @@ fn render_problem_list(frame: &mut Frame, app: &App) {
     let items: Vec<ListItem> = app
         .problems
         .iter()
-        .map(|p| {
-            let tick = if p.solved() {
+        .enumerate()
+        .map(|(i, p)| {
+            let colour = difficulty_colour(&p.difficulty);
+
+            let style = if i == app.problem_selected {
+                Style::new()
+                    .fg(Color::White)
+                    .bg(colour)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::new().fg(colour)
+            };
+
+            let status_char = if p.solved() {
                 "✓"
             } else if app.pulled.is_pulled(&p.id) {
                 "●"
+            } else if p.paid_only {
+                "$"
             } else {
                 " "
             };
-            ListItem::new(format!(
-                "[{tick}] {} - {} ({:?})",
-                p.id, p.title, p.difficulty
-            ))
+
+            let text = format!("[{status_char}] {} - {}", p.id, p.title);
+            ListItem::new(text).style(style)
         })
         .collect();
 
-    let list = List::new(items)
-        .block(Block::bordered().title("LeetCode Problems"))
-        .highlight_style(Style::new().reversed());
+    let list = List::new(items).block(Block::bordered().title("LeetCode Problems"));
 
     let mut state = ListState::default();
     state.select(Some(app.problem_selected));
-
     frame.render_stateful_widget(list, frame.area(), &mut state);
+}
+
+fn difficulty_colour(difficulty: &Difficulty) -> Color {
+    match difficulty {
+        Difficulty::Easy => Color::Rgb(88, 168, 88), // muted green
+        Difficulty::Medium => Color::Rgb(200, 160, 60), // muted amber/gold
+        Difficulty::Hard => Color::Rgb(200, 90, 90), // muted red
+    }
 }
 
 fn render_language_dropdown(frame: &mut Frame, app: &App) {

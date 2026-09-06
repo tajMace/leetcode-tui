@@ -33,6 +33,7 @@ const PROBLEM_LIST_QUERY: &str = "query problemsetQuestionList($categorySlug: St
     questions: data {
       difficulty
       frontendQuestionId: questionFrontendId
+      paidOnly: isPaidOnly
       status
       title
       titleSlug
