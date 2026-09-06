@@ -1,16 +1,20 @@
 // provides an API to add [[bin]] entries to the Cargo.toml
 // allows for Rust verification in the IDE, without being in a /bin
 
-use crate::{config::Config, error::Result};
-use std::fs;
+use crate::{commands::get_challenge_filepath, config::Config, error::Result, models::LangSlug};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 pub fn add_bin_entry(slug: &str) -> Result<()> {
     let file_stem = slug.replace('-', "_");
+    let filepath = get_challenge_filepath(slug, LangSlug::Rust)?;
     let mut doc: toml::Table = get_cargo_toml_contents()?;
     let bin_array = get_or_create_bin_array(&mut doc);
 
     if !bin_entry_exists(bin_array, &file_stem) {
-        insert_to_bin_array(bin_array, &file_stem, slug);
+        insert_to_bin_array(bin_array, &file_stem, &filepath);
         write_cargo_toml_contents(&doc)?;
     }
 
@@ -39,7 +43,7 @@ fn bin_entry_exists(bin_array: &[toml::Value], file_stem: &str) -> bool {
         .any(|entry| entry.get("name").and_then(|n| n.as_str()) == Some(file_stem))
 }
 
-fn insert_to_bin_array(bin_array: &mut Vec<toml::Value>, file_stem: &str, slug: &str) {
+fn insert_to_bin_array(bin_array: &mut Vec<toml::Value>, file_stem: &str, filepath: &Path) {
     let mut new_entry = toml::Table::new();
     new_entry.insert(
         "name".to_string(),
@@ -47,7 +51,7 @@ fn insert_to_bin_array(bin_array: &mut Vec<toml::Value>, file_stem: &str, slug: 
     );
     new_entry.insert(
         "path".to_string(),
-        toml::Value::String(format!("src/problems/{slug}/q.rs")),
+        toml::Value::String(filepath.to_string_lossy().to_string()),
     );
     bin_array.push(toml::Value::Table(new_entry));
 }
@@ -112,7 +116,7 @@ mod tests {
     #[test]
     fn insert_to_bin_array_adds_correct_name_and_path() {
         let mut entries: Vec<toml::Value> = vec![];
-        insert_to_bin_array(&mut entries, "two_sum", "two-sum");
+        insert_to_bin_array(&mut entries, "two_sum", Path::new("1-two-sum"));
 
         assert_eq!(entries.len(), 1);
         let name = entries[0].get("name").and_then(|v| v.as_str());
@@ -124,7 +128,7 @@ mod tests {
     #[test]
     fn insert_to_bin_array_appends_without_removing_existing() {
         let mut entries = vec![sample_entry("existing", "src/problems/existing/q.rs")];
-        insert_to_bin_array(&mut entries, "two_sum", "two-sum");
+        insert_to_bin_array(&mut entries, "two_sum", Path::new("1-two-sum"));
 
         assert_eq!(entries.len(), 2);
         assert!(bin_entry_exists(&entries, "existing"));
