@@ -5,7 +5,8 @@ use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Flex, Layout, Rect},
     style::{Color, Modifier, Style},
-    widgets::{Block, List, ListItem, ListState},
+    text::{Line, Span},
+    widgets::{Block, List, ListItem, ListState, Paragraph},
 };
 
 use crate::{
@@ -58,6 +59,7 @@ fn run_event_loop(
 
 fn render(frame: &mut Frame, app: &App) {
     render_problem_list(frame, app);
+    render_keybind_box(frame, app);
     if app.mode == Mode::LanguageSelect {
         render_language_dropdown(frame, app);
     }
@@ -107,6 +109,56 @@ fn difficulty_colour(difficulty: &Difficulty) -> Color {
         Difficulty::Easy => Color::Rgb(88, 168, 88), // muted green
         Difficulty::Medium => Color::Rgb(200, 160, 60), // muted amber/gold
         Difficulty::Hard => Color::Rgb(200, 90, 90), // muted red
+    }
+}
+
+fn render_keybind_box(frame: &mut Frame, app: &App) {
+    let bindings: &[(&str, &str)] = match app.mode {
+        Mode::ProblemList => &[
+            ("↑/↓", "navigate"),
+            ("Enter", "select"),
+            ("r", "refresh"),
+            ("q", "quit"),
+        ],
+        Mode::LanguageSelect => &[("↑/↓", "navigate"), ("Enter", "pull"), ("Esc", "cancel")],
+    };
+
+    let symbols: &[(&str, &str)] = &[("✓", "solved"), ("●", "pulled"), ("$", "paid only")];
+
+    let mut text: Vec<Line> = bindings
+        .iter()
+        .map(|(key, action)| {
+            Line::from(vec![
+                Span::styled(
+                    *key,
+                    Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                ),
+                Span::raw(format!(" → {action}")),
+            ])
+        })
+        .collect();
+
+    text.push(Line::raw("")); // blank separator line
+    text.extend(symbols.iter().map(|(symbol, meaning)| {
+        Line::from(vec![Span::raw(format!("{symbol} ")), Span::raw(*meaning)])
+    }));
+
+    let area = keybind_box_area(frame.area(), text.len() as u16);
+    frame.render_widget(ratatui::widgets::Clear, area);
+    frame.render_widget(
+        Paragraph::new(text).block(Block::bordered().title("Keys")),
+        area,
+    );
+}
+
+fn keybind_box_area(full_area: Rect, content_lines: u16) -> Rect {
+    let width = 20;
+    let height = content_lines + 2;
+    Rect {
+        x: full_area.width.saturating_sub(width), // right-aligned
+        y: 0,                                     // top-aligned
+        width: width.min(full_area.width),
+        height: height.min(full_area.height),
     }
 }
 
