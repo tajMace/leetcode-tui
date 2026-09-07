@@ -3,17 +3,21 @@
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
     DefaultTerminal, Frame,
-    layout::{Constraint, Flex, Layout, Rect},
+    layout::{Alignment, Constraint, Flex, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
 
 use crate::{
+    cache::save_cached_problem_list,
+    client::{self, LeetCodeClient},
     error::Result,
     models::{Difficulty, ProblemSummary, PulledLanguages},
     tui::app::{App, Mode},
 };
+
+pub const PAGE_SIZE: i32 = 100;
 
 pub fn run(problems: Vec<ProblemSummary>, pulled: PulledLanguages) -> Result<()> {
     let mut terminal = ratatui::init();
@@ -38,7 +42,7 @@ fn run_event_loop(
                 Mode::ProblemList => match key.code {
                     KeyCode::Up => app.select_previous_problem(),
                     KeyCode::Down => app.select_next_problem(),
-                    KeyCode::Char('r') => app.pull_problem_list()?,
+                    KeyCode::Char('r') => pull_problem_list(terminal, &mut app)?,
                     KeyCode::Char('q') => app.quit(),
                     KeyCode::Enter => app.open_language_selection(),
                     _ => {}
@@ -62,6 +66,9 @@ fn render(frame: &mut Frame, app: &App) {
     render_keybind_box(frame, app);
     if app.mode == Mode::LanguageSelect {
         render_language_dropdown(frame, app);
+    }
+    if let Some((count, total)) = app.fetch_progress {
+        render_fetch_progress(frame, count, total);
     }
 }
 
@@ -200,4 +207,54 @@ fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
         .flex(Flex::Center)
         .areas(area);
     area
+}
+
+fn pull_problem_list(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
+    let mut all_problems = Vec::new();
+    let mut skip = 0;
+
+    let client = LeetCodeClient::new()?;
+
+    loop {
+        let (page, total) = client.fetch_problem_page(skip, PAGE_SIZE)?;
+        all_problems.extend(page);
+
+        app.fetch_progress = Some((all_problems.len(), total as usize));
+        terminal.draw(|frame| render(frame, app))?;
+
+        if all_problems.len() >= total {
+            break;
+        }
+        skip += PAGE_SIZE;
+    }
+
+    app.fetch_progress = None;
+    save_cached_problem_list(&all_problems)?;
+    app.problems = all_problems;
+
+    Ok(())
+}
+
+fn render_fetch_progress(frame: &mut Frame, count: usize, total: usize) {
+    let percent = if total > 0 { (count * 100) / total } else { 0 };
+    let filled = (percent / 5) as usize;
+    let bar = format!("{}{}", "█".repeat(filled), "░".repeat(20 - filled));
+
+    let area = centered_rect(40, 20, frame.area());
+
+    let content_lines = 2; // "Fetching..." line + bar line
+    let inner_height = area.height.saturating_sub(2); // minus top/bottom border
+    let top_padding = inner_height.saturating_sub(content_lines).saturating_div(2);
+
+    let mut lines: Vec<Line> = (0..top_padding).map(|_| Line::raw("")).collect();
+    lines.push(Line::raw(format!("Fetching problems... {count}/{total}")));
+    lines.push(Line::raw(format!("{bar} {percent}%")));
+
+    frame.render_widget(ratatui::widgets::Clear, area);
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(Block::bordered().title("Refreshing"))
+            .alignment(Alignment::Center),
+        area,
+    );
 }

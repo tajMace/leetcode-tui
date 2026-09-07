@@ -27,6 +27,9 @@ pub struct App {
     pub mode: Mode,
     pub lang_options: Vec<LangSlug>,
     pub lang_selected: usize,
+
+    // in action status -> x out of y
+    pub fetch_progress: Option<(usize, usize)>,
 }
 
 impl App {
@@ -40,6 +43,8 @@ impl App {
             mode: ProblemList,
             lang_options: LangSlug::value_variants().to_vec(),
             lang_selected: 0,
+
+            fetch_progress: None,
         }
     }
 

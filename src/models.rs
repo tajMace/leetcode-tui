@@ -172,18 +172,27 @@ pub struct ProblemSummary {
 }
 
 impl ProblemSummary {
-    pub fn list_from_graphql_value(raw: &Value) -> Result<Vec<ProblemSummary>> {
-        let questions_json = raw
+    pub fn list_from_graphql_value(raw: &Value) -> Result<(Vec<Self>, usize)> {
+        let list_json = raw
             .get("data")
             .and_then(|d| d.get("problemsetQuestionList"))
-            .and_then(|l| l.get("questions"))
             .ok_or_else(|| {
-                LeetCodeError::MalformedResponse(
-                    "expected data.problemsetQuestionList.questions".to_string(),
-                )
+                LeetCodeError::MalformedResponse("expected data.problemsetQuestionList".to_string())
             })?;
 
-        Ok(serde_json::from_value(questions_json.clone())?)
+        let total = list_json
+            .get("total")
+            .and_then(|t| t.as_u64())
+            .ok_or_else(|| LeetCodeError::MalformedResponse("expected total".to_string()))?
+            as usize;
+
+        let questions_json = list_json
+            .get("questions")
+            .ok_or_else(|| LeetCodeError::MalformedResponse("expected questions".to_string()))?;
+
+        let problems: Vec<Self> = serde_json::from_value(questions_json.clone())?;
+
+        Ok((problems, total))
     }
 
     pub fn solved(&self) -> bool {

@@ -128,11 +128,10 @@ impl LeetCodeClient {
         let mut skip = 0;
 
         loop {
-            let page = self.fetch_problem_page(skip, PROBLEM_PAGE_SIZE)?;
-            let page_len = page.len();
+            let (page, total) = self.fetch_problem_page(skip, PROBLEM_PAGE_SIZE)?;
             all_problems.extend(page);
 
-            if page_len < PROBLEM_PAGE_SIZE as usize {
+            if all_problems.len() == total as usize {
                 break;
             }
             skip += PROBLEM_PAGE_SIZE;
@@ -141,7 +140,11 @@ impl LeetCodeClient {
         Ok(all_problems)
     }
 
-    pub fn fetch_problem_page(&self, skip: i32, limit: i32) -> Result<Vec<ProblemSummary>> {
+    pub fn fetch_problem_page(
+        &self,
+        skip: i32,
+        limit: i32,
+    ) -> Result<(Vec<ProblemSummary>, usize)> {
         let variables = serde_json::json!({
             "categorySlug": "",
             "skip": skip,
@@ -151,7 +154,7 @@ impl LeetCodeClient {
 
         let raw = self.query_graphql(PROBLEM_LIST_QUERY, variables)?;
 
-        Ok(ProblemSummary::list_from_graphql_value(&raw)?)
+        ProblemSummary::list_from_graphql_value(&raw)
     }
 
     /* ----- private helpers ----- */
