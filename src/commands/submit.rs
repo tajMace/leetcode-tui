@@ -66,6 +66,7 @@ pub fn print_submission_result(result: &SubmissionResult) {
             code_output,
             total_correct,
             total_testcases,
+            std_output,
             ..
         } => {
             println!("{RED}{BOLD}╔═══════════════════════════════════════╗{RESET}");
@@ -77,6 +78,7 @@ pub fn print_submission_result(result: &SubmissionResult) {
             println!("    input:    {last_testcase}");
             println!("    expected: {expected_output}");
             println!("    got:      {code_output}");
+            print_single_stdout(std_output);
         }
         SubmissionResult::CompileError {
             full_compile_error, ..
@@ -88,28 +90,34 @@ pub fn print_submission_result(result: &SubmissionResult) {
             println!("{full_compile_error}");
         }
         SubmissionResult::RuntimeError {
-            full_runtime_error, ..
+            full_runtime_error,
+            std_output,
+            ..
         } => {
             println!("{RED}{BOLD}╔═══════════════════════════════════════╗{RESET}");
             println!("{RED}{BOLD}║           ✗  RUNTIME ERROR            ║{RESET}");
             println!("{RED}{BOLD}╚═══════════════════════════════════════╝{RESET}");
             println!();
             println!("{full_runtime_error}");
+            print_single_stdout(std_output);
         }
-        SubmissionResult::TimeLimitExceeded { .. } => {
+        SubmissionResult::TimeLimitExceeded { std_output, .. } => {
             println!("{RED}{BOLD}╔═══════════════════════════════════════╗{RESET}");
             println!("{RED}{BOLD}║         ✗  TIME LIMIT EXCEEDED        ║{RESET}");
             println!("{RED}{BOLD}╚═══════════════════════════════════════╝{RESET}");
+            print_single_stdout(std_output);
         }
-        SubmissionResult::MemoryLimitExceeded { .. } => {
+        SubmissionResult::MemoryLimitExceeded { std_output, .. } => {
             println!("{RED}{BOLD}╔═══════════════════════════════════════╗{RESET}");
             println!("{RED}{BOLD}║        ✗  MEMORY LIMIT EXCEEDED       ║{RESET}");
             println!("{RED}{BOLD}╚═══════════════════════════════════════╝{RESET}");
+            print_single_stdout(std_output);
         }
-        SubmissionResult::OutputLimitExceeded { .. } => {
+        SubmissionResult::OutputLimitExceeded { std_output, .. } => {
             println!("{RED}{BOLD}╔═══════════════════════════════════════╗{RESET}");
             println!("{RED}{BOLD}║        ✗  OUTPUT LIMIT EXCEEDED       ║{RESET}");
             println!("{RED}{BOLD}╚═══════════════════════════════════════╝{RESET}");
+            print_single_stdout(std_output);
         }
         SubmissionResult::Unknown(code, msg) => {
             println!("{RED}{BOLD}╔═══════════════════════════════════════╗{RESET}");
@@ -130,29 +138,13 @@ fn percentile_bar(pct: f32) -> String {
     )
 }
 
-/* ---------- shared helpers ---------- */
-
-fn print_banner(label: &str, color: &str) {
-    let width = 41;
-    let padding = (width - 2 - label.chars().count()) / 2;
-    println!("{color}{BOLD}╔{}╗{RESET}", "═".repeat(width));
-    println!(
-        "{color}{BOLD}║{}{label}{}║{RESET}",
-        " ".repeat(padding),
-        " ".repeat(width - padding - label.chars().count()),
-    );
-    println!("{color}{BOLD}╚{}╝{RESET}", "═".repeat(width));
-}
-
-fn percentile_str(percentile: Option<f32>, comparison: &str) -> String {
-    match percentile {
-        Some(p) => format!("beats {p:.1}% of submissions on {comparison}"),
-        None => "percentile unavailable".to_string(),
+fn print_single_stdout(std_output: &Option<String>) {
+    let Some(output) = std_output else {
+        return;
+    };
+    if output.is_empty() {
+        return;
     }
-}
-
-fn print_testcase_diff(index: usize, expected: &str, got: &str) {
-    println!("{DIM}  testcase {}:{RESET}", index + 1);
-    println!("    expected: {expected}");
-    println!("    got:      {got}");
+    println!();
+    println!("  stdout: {output}");
 }

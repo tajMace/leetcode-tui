@@ -11,7 +11,7 @@ use ratatui::{
 
 use crate::{
     cache::save_cached_problem_list,
-    client::{self, LeetCodeClient},
+    client::LeetCodeClient,
     error::Result,
     models::{Difficulty, ProblemSummary, PulledLanguages},
     tui::app::{App, Mode},

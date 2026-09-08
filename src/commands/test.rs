@@ -28,6 +28,7 @@ const GREEN: &str = "\x1B[1;32m";
 const RED: &str = "\x1B[1;31m";
 const DIM: &str = "\x1B[2m";
 const CLEAR_SCREEN: &str = "\x1B[2J\x1B[1;1H";
+
 /* ---------- test (RunResult) ---------- */
 
 pub fn print_run_result(result: &RunResult) {
@@ -88,6 +89,8 @@ pub fn print_run_result(result: &RunResult) {
             print_testcase_diff(i, expected, got);
         }
     }
+
+    print_stdout(result);
 }
 
 /* ---------- shared helpers ---------- */
@@ -115,4 +118,22 @@ fn print_testcase_diff(index: usize, expected: &str, got: &str) {
     println!("{DIM}  testcase {}:{RESET}", index + 1);
     println!("    expected: {expected}");
     println!("    got:      {got}");
+}
+
+fn print_stdout(result: &RunResult) {
+    // filter out empty stdout
+    let Some(outputs) = &result.std_output_list else {
+        return;
+    };
+    if !outputs.iter().any(|s| !s.is_empty()) {
+        return;
+    }
+
+    println!();
+    println!("  stdout:");
+    for (i, output) in outputs.iter().enumerate() {
+        if !output.is_empty() {
+            println!("    testcase {}: {output}", i + 1);
+        }
+    }
 }

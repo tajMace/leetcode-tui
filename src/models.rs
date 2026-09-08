@@ -342,24 +342,29 @@ pub enum SubmissionResult {
         expected_output: String,
         total_correct: u16,
         total_testcases: u16,
+        std_output: Option<String>,
     },
     MemoryLimitExceeded {
         last_testcase: String,
         expected_output: String,
+        std_output: Option<String>,
     },
     OutputLimitExceeded {
         last_testcase: String,
         expected_output: String,
+        std_output: Option<String>,
     },
     TimeLimitExceeded {
         last_testcase: String,
         expected_output: String,
+        std_output: Option<String>,
     },
     RuntimeError {
         runtime_error: String,
         full_runtime_error: String,
         last_testcase: String,
         expected_output: String,
+        std_output: Option<String>,
     },
     CompileError {
         compile_error: String,
@@ -394,24 +399,29 @@ impl From<SubmissionStatus> for SubmissionResult {
                 expected_output: req!(s, expected_output, "WrongAnswer"),
                 total_correct: req!(s, total_correct, "WrongAnswer"),
                 total_testcases: req!(s, total_testcases, "WrongAnswer"),
+                std_output: s.std_output,
             },
             12 => SubmissionResult::MemoryLimitExceeded {
                 last_testcase: req!(s, last_testcase, "MemoryLimitExceeded"),
                 expected_output: req!(s, expected_output, "MemoryLimitExceeded"),
+                std_output: s.std_output,
             },
             13 => SubmissionResult::OutputLimitExceeded {
                 last_testcase: req!(s, last_testcase, "OutputLimitExceeded"),
                 expected_output: req!(s, expected_output, "OutputLimitExceeded"),
+                std_output: s.std_output,
             },
             14 => SubmissionResult::TimeLimitExceeded {
                 last_testcase: req!(s, last_testcase, "TimeLimitExceeded"),
                 expected_output: req!(s, expected_output, "TimeLimitExceeded"),
+                std_output: s.std_output,
             },
             15 => SubmissionResult::RuntimeError {
                 runtime_error: req!(s, runtime_error, "RuntimeError"),
                 full_runtime_error: req!(s, full_runtime_error, "RuntimeError"),
                 last_testcase: req!(s, last_testcase, "RuntimeError"),
                 expected_output: req!(s, expected_output, "RuntimeError"),
+                std_output: s.std_output,
             },
             20 => SubmissionResult::CompileError {
                 compile_error: req!(s, compile_error, "CompileError"),

@@ -1,9 +1,6 @@
 // command to remove a file locally, while preserving related structures (eg. cache)
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path};
 
 use crate::{
     cache::{load_pulled_languages, save_pulled_languages},
