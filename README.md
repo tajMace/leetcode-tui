@@ -1,1 +1,1 @@
-leetcode cli tool; built in rust
+leetcode tui tool; built in rust
