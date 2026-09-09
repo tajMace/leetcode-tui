@@ -45,7 +45,7 @@ impl LangSlug {
             LangSlug::Cpp => "cpp",
             LangSlug::Java => "java",
             LangSlug::Python => "py",
-            LangSlug::Python3 => "3.py",
+            LangSlug::Python3 => "py3",
             LangSlug::JavaScript => "js",
             LangSlug::TypeScript => "ts",
             LangSlug::CSharp => "cs",
