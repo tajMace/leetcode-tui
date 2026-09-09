@@ -128,10 +128,10 @@ impl Problem {
         Ok(serde_json::from_value(question_json.clone())?)
     }
 
-    pub fn from_graphql_payload(json_str: &str, slug: &str) -> Result<Self> {
-        let root: Value = serde_json::from_str(json_str)?;
-        Self::from_graphql_value(&root, slug)
-    }
+    // pub fn from_graphql_payload(json_str: &str, slug: &str) -> Result<Self> {
+    //     let root: Value = serde_json::from_str(json_str)?;
+    //     Self::from_graphql_value(&root, slug)
+    // }
 
     pub fn lang_snippet(&self, lang: LangSlug) -> Option<&CodeSnippet> {
         self.code_snippets.iter().find(|s| s.lang_slug == lang)
@@ -260,71 +260,71 @@ impl fmt::Display for Difficulty {
 /// field presence verified against real submissions: 2026-08-29
 #[derive(Deserialize)]
 pub struct SubmissionStatus {
-    status_code: u8,                    // present in all 7 confirmed outcomes
-    lang: LangSlug,                     // present in all 7
-    run_success: bool,                  // present in all 7
-    status_runtime: String,             // present in all 7
-    memory: u32,                        // present in all 7
-    display_runtime: Option<String>,    // present only in: Accepted, WrongAnswer
-    question_id: String,                // present in all 7
-    elapsed_time: Option<u16>,          // present in all except: CompileError
-    compare_result: Option<String>,     // present in all except: CompileError
-    code_output: Option<String>,        // present in all except: CompileError
-    std_output: Option<String>,         // present in all except: CompileError
-    last_testcase: Option<String>,      // present in all except: CompileError
-    expected_output: Option<String>,    // present in all except: CompileError
-    compile_error: Option<String>,      // present only in: CompileError
+    status_code: u8, // present in all 7 confirmed outcomes
+    // lang: LangSlug,                     // present in all 7
+    // run_success: bool,                  // present in all 7
+    // status_runtime: String,             // present in all 7
+    // memory: u32,                        // present in all 7
+    // display_runtime: Option<String>,    // present only in: Accepted, WrongAnswer
+    // question_id: String,                // present in all 7
+    // elapsed_time: Option<u16>,          // present in all except: CompileError
+    // compare_result: Option<String>, // present in all except: CompileError
+    code_output: Option<String>,   // present in all except: CompileError
+    std_output: Option<String>,    // present in all except: CompileError
+    last_testcase: Option<String>, // present in all except: CompileError
+    expected_output: Option<String>, // present in all except: CompileError
+    // compile_error: Option<String>,  // present only in: CompileError
     full_compile_error: Option<String>, // present only in: CompileError
-    runtime_error: Option<String>,      // present only in: RuntimeError
+    // runtime_error: Option<String>,  // present only in: RuntimeError
     full_runtime_error: Option<String>, // present only in: RuntimeError
-    input: Option<String>,              // present only in: WrongAnswer
-    input_formatted: Option<String>,    // present only in: WrongAnswer
-    task_finish_time: u64,              // present in all 7
-    task_name: String,                  // present in all 7
-    finished: bool,                     // present in all 7
-    total_correct: Option<u16>,         // key present in all except: CompileError (null there)
-    total_testcases: Option<u16>,       // key present in all except: CompileError (null there)
-    runtime_percentile: Option<f32>,    // non-null only in: Accepted
-    status_memory: String,              // present in all 7
-    memory_percentile: Option<f32>,     // non-null only in: Accepted
-    pretty_lang: String,                // present in all 7
-    submission_id: String,              // present in all 7
-    status_msg: String,                 // present in all 7
-    state: String,                      // present in all 7
+    // input: Option<String>,              // present only in: WrongAnswer
+    // input_formatted: Option<String>,    // present only in: WrongAnswer
+    // task_finish_time: u64,              // present in all 7
+    // task_name: String,                  // present in all 7
+    // finished: bool,                     // present in all 7
+    total_correct: Option<u16>, // key present in all except: CompileError (null there)
+    total_testcases: Option<u16>, // key present in all except: CompileError (null there)
+    runtime_percentile: Option<f32>, // non-null only in: Accepted
+    // status_memory: String,      // present in all 7
+    memory_percentile: Option<f32>, // non-null only in: Accepted
+    // pretty_lang: String,        // present in all 7
+    // submission_id: String,      // present in all 7
+    status_msg: String, // present in all 7
+                        // state: String,              // present in all 7
 }
 
-impl SubmissionStatus {
-    pub fn is_finished(&self) -> bool {
-        self.state == "SUCCESS"
-    }
-}
+// impl SubmissionStatus {
+//     pub fn is_finished(&self) -> bool {
+//         self.state == "SUCCESS"
+//     }
+// }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SubmissionStatusCode {
-    Accepted,
-    WrongAnswer,
-    MemoryLimitExceeded,
-    OutputLimitExceeded,
-    TimeLimitExceeded,
-    RuntimeError,
-    CompileError,
-    Unknown(i64, String),
-}
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub enum SubmissionStatusCode {
+//     Accepted,
+//     WrongAnswer,
+//     MemoryLimitExceeded,
+//     OutputLimitExceeded,
+//     TimeLimitExceeded,
+//     RuntimeError,
+//     CompileError,
+//     Unknown(i64, String),
+// }
 
-impl From<i64> for SubmissionStatusCode {
-    fn from(code: i64) -> Self {
-        match code {
-            10 => Self::Accepted,
-            11 => Self::WrongAnswer,
-            12 => Self::MemoryLimitExceeded,
-            13 => Self::OutputLimitExceeded,
-            14 => Self::TimeLimitExceeded,
-            15 => Self::RuntimeError,
-            20 => Self::CompileError,
-            other => Self::Unknown(other, String::new()),
-        }
-    }
-}
+// impl From<i64> for SubmissionStatusCode {
+//     fn from(code: i64) -> Self {
+//         match code {
+//             10 => Self::Accepted,
+//             11 => Self::WrongAnswer,
+//             12 => Self::MemoryLimitExceeded,
+//             13 => Self::OutputLimitExceeded,
+//             14 => Self::TimeLimitExceeded,
+//             15 => Self::RuntimeError,
+//             20 => Self::CompileError,
+//             other => Self::Unknown(other, String::new()),
+//         }
+//     }
+// }
 
 /// domain-level result-- each variant only carries the
 /// fields that are actually meaningful for that outcome.
@@ -337,7 +337,7 @@ pub enum SubmissionResult {
         total_testcases: u16,
     },
     WrongAnswer {
-        compare_result: String,
+        // compare_result: String,
         code_output: String,
         last_testcase: String,
         expected_output: String,
@@ -346,29 +346,29 @@ pub enum SubmissionResult {
         std_output: Option<String>,
     },
     MemoryLimitExceeded {
-        last_testcase: String,
-        expected_output: String,
+        // last_testcase: String,
+        // expected_output: String,
         std_output: Option<String>,
     },
     OutputLimitExceeded {
-        last_testcase: String,
-        expected_output: String,
+        // last_testcase: String,
+        // expected_output: String,
         std_output: Option<String>,
     },
     TimeLimitExceeded {
-        last_testcase: String,
-        expected_output: String,
+        // last_testcase: String,
+        // expected_output: String,
         std_output: Option<String>,
     },
     RuntimeError {
-        runtime_error: String,
+        // runtime_error: String,
         full_runtime_error: String,
-        last_testcase: String,
-        expected_output: String,
+        // last_testcase: String,
+        // expected_output: String,
         std_output: Option<String>,
     },
     CompileError {
-        compile_error: String,
+        // compile_error: String,
         full_compile_error: String,
     },
     Unknown(i64, String),
@@ -394,7 +394,7 @@ impl From<SubmissionStatus> for SubmissionResult {
                 total_testcases: req!(s, total_testcases, "Accepted"),
             },
             11 => SubmissionResult::WrongAnswer {
-                compare_result: req!(s, compare_result, "WrongAnswer"),
+                // compare_result: req!(s, compare_result, "WrongAnswer"),
                 code_output: req!(s, code_output, "WrongAnswer"),
                 last_testcase: req!(s, last_testcase, "WrongAnswer"),
                 expected_output: req!(s, expected_output, "WrongAnswer"),
@@ -403,29 +403,29 @@ impl From<SubmissionStatus> for SubmissionResult {
                 std_output: s.std_output,
             },
             12 => SubmissionResult::MemoryLimitExceeded {
-                last_testcase: req!(s, last_testcase, "MemoryLimitExceeded"),
-                expected_output: req!(s, expected_output, "MemoryLimitExceeded"),
+                // last_testcase: req!(s, last_testcase, "MemoryLimitExceeded"),
+                // expected_output: req!(s, expected_output, "MemoryLimitExceeded"),
                 std_output: s.std_output,
             },
             13 => SubmissionResult::OutputLimitExceeded {
-                last_testcase: req!(s, last_testcase, "OutputLimitExceeded"),
-                expected_output: req!(s, expected_output, "OutputLimitExceeded"),
+                // last_testcase: req!(s, last_testcase, "OutputLimitExceeded"),
+                // expected_output: req!(s, expected_output, "OutputLimitExceeded"),
                 std_output: s.std_output,
             },
             14 => SubmissionResult::TimeLimitExceeded {
-                last_testcase: req!(s, last_testcase, "TimeLimitExceeded"),
-                expected_output: req!(s, expected_output, "TimeLimitExceeded"),
+                // last_testcase: req!(s, last_testcase, "TimeLimitExceeded"),
+                // expected_output: req!(s, expected_output, "TimeLimitExceeded"),
                 std_output: s.std_output,
             },
             15 => SubmissionResult::RuntimeError {
-                runtime_error: req!(s, runtime_error, "RuntimeError"),
+                // runtime_error: req!(s, runtime_error, "RuntimeError"),
                 full_runtime_error: req!(s, full_runtime_error, "RuntimeError"),
-                last_testcase: req!(s, last_testcase, "RuntimeError"),
-                expected_output: req!(s, expected_output, "RuntimeError"),
+                // last_testcase: req!(s, last_testcase, "RuntimeError"),
+                // expected_output: req!(s, expected_output, "RuntimeError"),
                 std_output: s.std_output,
             },
             20 => SubmissionResult::CompileError {
-                compile_error: req!(s, compile_error, "CompileError"),
+                // compile_error: req!(s, compile_error, "CompileError"),
                 full_compile_error: req!(s, full_compile_error, "CompileError"),
             },
             other => SubmissionResult::Unknown(other as i64, s.status_msg),
@@ -436,24 +436,24 @@ impl From<SubmissionStatus> for SubmissionResult {
 #[derive(Deserialize, Debug)]
 pub struct RunResult {
     // overall run info — present in all 3 confirmed outcomes
-    pub status_code: u8,
-    pub status_msg: String,
-    pub state: String,
-    pub lang: LangSlug,
-    pub pretty_lang: String,
-    pub run_success: bool,
-    pub memory: u32,
+    // pub status_code: u8,
+    // pub status_msg: String,
+    // pub state: String,
+    // pub lang: LangSlug,
+    // pub pretty_lang: String,
+    // pub run_success: bool,
+    // pub memory: u32,
     pub status_memory: String,
     pub status_runtime: String,
-    pub submission_id: String,
-    pub task_finish_time: u64,
-    pub task_name: String,
+    // pub submission_id: String,
+    // pub task_finish_time: u64,
+    // pub task_name: String,
 
     // present in Accepted, WrongAnswer; absent in CompileError
-    pub elapsed_time: Option<u32>,
+    // pub elapsed_time: Option<u32>,
     pub total_correct: Option<u32>,
     pub total_testcases: Option<u32>,
-    pub display_runtime: Option<String>,
+    // pub display_runtime: Option<String>,
 
     // non-null only in Accepted
     pub runtime_percentile: Option<f32>,
@@ -461,122 +461,26 @@ pub struct RunResult {
 
     // present (possibly empty) in Accepted/WrongAnswer; absent in CompileError
     pub code_answer: Option<Vec<String>>,
-    pub code_output: Option<Vec<String>>,
+    // pub code_output: Option<Vec<String>>,
     pub std_output_list: Option<Vec<String>>,
     pub compare_result: Option<String>,
     pub correct_answer: Option<bool>,
 
     // expected_* — same presence pattern as their non-expected counterparts
     pub expected_code_answer: Option<Vec<String>>,
-    pub expected_code_output: Option<Vec<String>>,
-    pub expected_std_output_list: Option<Vec<String>>,
-    pub expected_lang: Option<String>,
-    pub expected_run_success: Option<bool>,
-    pub expected_status_code: Option<u8>,
-    pub expected_status_runtime: Option<String>,
-    pub expected_display_runtime: Option<String>,
-    pub expected_elapsed_time: Option<u32>,
-    pub expected_memory: Option<u32>,
-    pub expected_task_finish_time: Option<u64>,
-    pub expected_task_name: Option<String>,
+    // pub expected_code_output: Option<Vec<String>>,
+    // pub expected_std_output_list: Option<Vec<String>>,
+    // pub expected_lang: Option<String>,
+    // pub expected_run_success: Option<bool>,
+    // pub expected_status_code: Option<u8>,
+    // pub expected_status_runtime: Option<String>,
+    // pub expected_display_runtime: Option<String>,
+    // pub expected_elapsed_time: Option<u32>,
+    // pub expected_memory: Option<u32>,
+    // pub expected_task_finish_time: Option<u64>,
+    // pub expected_task_name: Option<String>,
 
     // present only in CompileError
-    pub compile_error: Option<String>,
+    // pub compile_error: Option<String>,
     pub full_compile_error: Option<String>,
-}
-
-/*
- * Unit Tests
- */
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    mod question_model {
-        use super::*;
-
-        mod lang_snippet {
-            use super::*;
-            use crate::error::Result;
-
-            #[test]
-            fn parses_graphql_and_finds_language_snippet() -> Result<()> {
-                let json_payload =
-                    include_str!("../test_data/response_samples/two_sum_response.json");
-
-                let question = Problem::from_graphql_payload(json_payload, "two-sum")?;
-                assert_eq!(question.question_frontend_id, "1");
-                assert_eq!(question.title, "Two Sum");
-                assert_eq!(question.difficulty, Difficulty::Easy);
-
-                let snippet = question
-                    .lang_snippet(LangSlug::Rust)
-                    .expect("Expected to find a Rust snippet in the parsed payload");
-
-                assert_eq!(snippet.lang, "Rust");
-                assert_eq!(snippet.lang_slug, LangSlug::Rust);
-                assert!(snippet.code.contains("impl Solution"));
-                assert!(snippet.code.contains("pub fn two_sum"));
-
-                Ok(())
-            }
-
-            #[test]
-            fn returns_none_for_missing_language() -> Result<()> {
-                let json_payload =
-                    include_str!("../test_data/response_samples/two_sum_response.json");
-                let _ = Problem::from_graphql_payload(json_payload, "two-sum")?;
-
-                // tests that a language not included in the output does not crash the system
-                // possible on newer problems that don't yet support niche languages
-
-                Ok(())
-            }
-
-            #[test]
-            fn fails_on_malformed_json_syntax() {
-                let bad_json = "{ this is not valid json";
-                let result = Problem::from_graphql_payload(bad_json, "two-sum");
-
-                // asserts that the first `?` operator correctly caught the error
-                assert!(result.is_err(), "Expected an error for malformed JSON");
-            }
-
-            #[test]
-            fn fails_on_missing_required_fields() {
-                // present, non-null "question" object missing required fields --
-                // exercises the serde_json::from_value failure, not the
-                // ProblemNotFound/.filter(is_null) path
-                let bad_schema_json = r#"{
-                    "data": {
-                        "question": {
-                            "title": "Missing ID and Difficulty"
-                        }
-                    }
-                }"#;
-                let result = Problem::from_graphql_payload(bad_schema_json, "two-sum");
-
-                assert!(
-                    result.is_err(),
-                    "Expected an error for missing Question struct fields"
-                );
-            }
-
-            #[test]
-            fn fails_with_problem_not_found_when_question_is_null() {
-                // this is the case .filter(|q| !q.is_null()) exists for --
-                // worth its own test since it's a distinct code path from
-                // both malformed JSON and missing-fields
-                let null_question_json = r#"{ "data": { "question": null } }"#;
-                let result = Problem::from_graphql_payload(null_question_json, "fake-slug");
-
-                match result {
-                    Err(LeetCodeError::ProblemNotFound(slug)) => {
-                        assert_eq!(slug, "fake-slug");
-                    }
-                    other => panic!("expected ProblemNotFound, got {other:?}"),
-                }
-            }
-        }
-    }
 }

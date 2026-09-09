@@ -42,6 +42,7 @@ fn run_event_loop(
                 Mode::ProblemList => match key.code {
                     KeyCode::Up => app.select_previous_problem(),
                     KeyCode::Down => app.select_next_problem(),
+                    KeyCode::Char('d') => app.pull_daily_challenge()?,
                     KeyCode::Char('r') => pull_problem_list(terminal, &mut app)?,
                     KeyCode::Char('q') => app.quit(),
                     KeyCode::Enter => app.open_language_selection(),
@@ -124,6 +125,7 @@ fn render_keybind_box(frame: &mut Frame, app: &App) {
         Mode::ProblemList => &[
             ("↑/↓", "navigate"),
             ("Enter", "select"),
+            ("d", "pull daily"),
             ("r", "refresh"),
             ("q", "quit"),
         ],

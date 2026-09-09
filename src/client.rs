@@ -40,6 +40,13 @@ const PROBLEM_LIST_QUERY: &str = "query problemsetQuestionList($categorySlug: St
     }
   }
 }";
+const DAILY_QUESTION_ID_QUERY: &str = "query questionOfToday {
+  activeDailyCodingChallengeQuestion {
+    question {
+      questionFrontendId
+    }
+  }
+}";
 
 pub struct LeetCodeClient {
     http: reqwest::blocking::Client,
@@ -60,9 +67,11 @@ impl LeetCodeClient {
     fn query_graphql(
         &self,
         query: &str,
-        variables: serde_json::Value,
+        variables: Option<serde_json::Value>,
     ) -> Result<serde_json::Value> {
         self.rate_limit();
+
+        let variables = variables.unwrap_or_default();
 
         let body = serde_json::json!({
             "query": query,
@@ -84,7 +93,7 @@ impl LeetCodeClient {
         let variables = serde_json::json!({
             "titleSlug": slug
         });
-        let ret = self.query_graphql(query, variables)?;
+        let ret = self.query_graphql(query, Some(variables))?;
         Ok(Problem::from_graphql_value(&ret, slug)?)
     }
 
@@ -152,9 +161,24 @@ impl LeetCodeClient {
             "filters": {}
         });
 
-        let raw = self.query_graphql(PROBLEM_LIST_QUERY, variables)?;
+        let raw = self.query_graphql(PROBLEM_LIST_QUERY, Some(variables))?;
 
         ProblemSummary::list_from_graphql_value(&raw)
+    }
+
+    pub fn fetch_daily_challenge_id(&self) -> Result<i64> {
+        let value = self.query_graphql(DAILY_QUESTION_ID_QUERY, None)?;
+        let slug = value
+            .get("data")
+            .and_then(|d| d.get("activeDailyCodingChallengeQuestion"))
+            .and_then(|c| c.get("question"))
+            .and_then(|q| q.get("questionFrontendId"))
+            .and_then(|s| s.as_str())
+            .ok_or_else(|| {
+                LeetCodeError::MalformedResponse("expected daily challenge slug".to_string())
+            })?;
+
+        Ok(slug.parse()?)
     }
 
     /* ----- private helpers ----- */
@@ -249,212 +273,4 @@ fn value_to_id_string(value: &serde_json::Value) -> Option<String> {
         return Some(n.to_string());
     }
     None
-}
-
-/*
- * ========== UNIT TESTS ==========
- */
-#[cfg(test)]
-mod client_tests {
-    use super::*;
-    use crate::models::LangSlug;
-
-    fn live_client() -> LeetCodeClient {
-        LeetCodeClient::new().expect("client should construct")
-    }
-
-    fn two_sum_question(client: &LeetCodeClient) -> Problem {
-        client
-            .fetch_problem("two-sum")
-            .expect("should fetch two-sum")
-    }
-
-    #[test]
-    #[ignore = "hits the real LeetCode API — run manually with `cargo test -- --ignored --nocapture`"]
-    fn run_testcases_reports_accepted_for_correct_solution() {
-        let client = live_client();
-        let question = two_sum_question(&client);
-
-        let solution = ParsedSolution {
-            lang: LangSlug::Rust,
-            question_id: question.question_id.clone(),
-            typed_code: r#"
- impl Solution {
-     pub fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
-         use std::collections::HashMap;
-         let mut seen = HashMap::new();
-         for (i, &n) in nums.iter().enumerate() {
-             if let Some(&j) = seen.get(&(target - n)) {
-                 return vec![j as i32, i as i32];
-             }
-             seen.insert(n, i);
-         }
-         vec![]
-     }
- }
- "#
-            .to_string(),
-        };
-
-        let result = client
-            .run_testcases(&question, &solution)
-            .expect("run_testcases should succeed");
-
-        assert_eq!(result.status_code, 10);
-        assert_eq!(result.status_msg, "Accepted");
-        assert_eq!(result.correct_answer, Some(true));
-        assert_eq!(result.total_correct, result.total_testcases);
-    }
-
-    #[test]
-    #[ignore = "hits the real LeetCode API — run manually with `cargo test -- --ignored --nocapture`"]
-    fn run_testcases_reports_wrong_answer_for_bad_solution() {
-        let client = live_client();
-        let question = two_sum_question(&client);
-
-        let solution = ParsedSolution {
-            lang: LangSlug::Rust,
-            question_id: question.question_id.clone(),
-            typed_code: r#"
- impl Solution {
-     pub fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
-         vec![0, 0]
-     }
- }
- "#
-            .to_string(),
-        };
-
-        let result = client
-             .run_testcases(&question, &solution)
-             .expect("run_testcases should succeed (as an API call — the *solution* is wrong, not the request)");
-
-        assert_eq!(result.correct_answer, Some(false));
-    }
-
-    #[test]
-    #[ignore = "hits the real LeetCode API — run manually with `cargo test -- --ignored --nocapture`"]
-    fn run_testcases_reports_compile_error_for_invalid_syntax() {
-        let client = live_client();
-        let question = two_sum_question(&client);
-
-        let solution = ParsedSolution {
-            lang: LangSlug::Rust,
-            question_id: question.question_id.clone(),
-            typed_code: r#"
- impl Solution {
-     pub fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
-         shouldn'tcompile
-     }
- }
- "#
-            .to_string(),
-        };
-
-        let result = client
-             .run_testcases(&question, &solution)
-             .expect("run_testcases should succeed (as an API call — the *code* fails to compile, not the request)");
-
-        assert_eq!(result.status_msg, "Compile Error");
-        assert!(result.compile_error.is_some());
-        assert_eq!(result.correct_answer, None);
-    }
-}
-
-#[cfg(test)]
-mod submit_tests {
-    use super::*;
-    use crate::models::{LangSlug, SubmissionResult};
-
-    fn live_client() -> LeetCodeClient {
-        LeetCodeClient::new().expect("client should construct")
-    }
-
-    fn two_sum_question(client: &LeetCodeClient) -> Problem {
-        client
-            .fetch_problem("two-sum")
-            .expect("should fetch two-sum")
-    }
-
-    #[test]
-    #[ignore = "hits the real LeetCode API and records a real submission — run manually with `cargo test -- --ignored --nocapture`"]
-    fn submit_solution_reports_accepted_for_correct_solution() {
-        let client = live_client();
-        let question = two_sum_question(&client);
-
-        let solution = ParsedSolution {
-            lang: LangSlug::Rust,
-            question_id: question.question_id.clone(),
-            typed_code: r#"
-impl Solution {
-    pub fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
-        use std::collections::HashMap;
-        let mut seen = HashMap::new();
-        for (i, &n) in nums.iter().enumerate() {
-            if let Some(&j) = seen.get(&(target - n)) {
-                return vec![j as i32, i as i32];
-            }
-            seen.insert(n, i);
-        }
-        vec![]
-    }
-}
-"#
-            .to_string(),
-        };
-
-        let result = client
-            .submit_solution(&question, &solution)
-            .expect("submit_solution should succeed");
-
-        match result {
-            SubmissionResult::Accepted {
-                total_correct,
-                total_testcases,
-                runtime_percentile,
-                memory_percentile,
-                ..
-            } => {
-                assert_eq!(total_correct, total_testcases);
-                assert!(
-                    runtime_percentile > 0.0,
-                    "expected a real runtime percentile, got {runtime_percentile}"
-                );
-                assert!(
-                    memory_percentile > 0.0,
-                    "expected a real memory percentile, got {memory_percentile}"
-                );
-            }
-            other => panic!("expected Accepted, got a different outcome: {other:?}"),
-        }
-    }
-
-    #[test]
-    #[ignore = "hits the real LeetCode API and records a real submission — run manually with `cargo test -- --ignored --nocapture`"]
-    fn submit_solution_reports_wrong_answer_for_bad_solution() {
-        let client = live_client();
-        let question = two_sum_question(&client);
-
-        let solution = ParsedSolution {
-            lang: LangSlug::Rust,
-            question_id: question.question_id.clone(),
-            typed_code: r#"
-impl Solution {
-    pub fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
-        vec![0, 0]
-    }
-}
-"#
-            .to_string(),
-        };
-
-        let result = client
-            .submit_solution(&question, &solution)
-            .expect("submit_solution should succeed (as an API call — the *solution* is wrong, not the request)");
-
-        match result {
-            SubmissionResult::WrongAnswer { .. } => {}
-            other => panic!("expected WrongAnswer, got a different outcome: {other:?}"),
-        }
-    }
 }

@@ -4,14 +4,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use clap::ValueEnum;
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
     client::LeetCodeClient,
-    commands::get_challenge_filepath,
     error::{LeetCodeError, Result},
-    models::{LangSlug, ProblemSummary, PulledLanguages},
+    models::{ProblemSummary, PulledLanguages},
 };
 
 /*
@@ -42,22 +40,22 @@ pub fn save_pulled_languages(languages: &PulledLanguages) -> Result<()> {
     save_to(&get_or_create_pulled_cache_filepath()?, languages)
 }
 
-pub fn backfill_pulled_from_disk(problems: &[ProblemSummary]) -> Result<PulledLanguages> {
-    let mut pulled = load_pulled_languages()?;
+// pub fn backfill_pulled_from_disk(problems: &[ProblemSummary]) -> Result<PulledLanguages> {
+//     let mut pulled = load_pulled_languages()?;
 
-    for problem in problems {
-        for lang in LangSlug::value_variants() {
-            let filepath = get_challenge_filepath(&problem.title_slug, *lang)?;
-            if filepath.exists() {
-                pulled.mark_pulled(&problem.id, *lang);
-            }
-        }
-    }
+//     for problem in problems {
+//         for lang in LangSlug::value_variants() {
+//             let filepath = get_challenge_filepath(&problem.title_slug, *lang)?;
+//             if filepath.exists() {
+//                 pulled.mark_pulled(&problem.id, *lang);
+//             }
+//         }
+//     }
 
-    save_pulled_languages(&pulled)?;
+//     save_pulled_languages(&pulled)?;
 
-    Ok(pulled)
-}
+//     Ok(pulled)
+// }
 
 /*
  * ========== HELPERS ==========

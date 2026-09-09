@@ -1,5 +1,7 @@
 // crate-wide error enum (thiserror or hand-rolled)
 
+use std::num::ParseIntError;
+
 pub type Result<T> = std::result::Result<T, LeetCodeError>;
 
 #[derive(thiserror::Error, Debug)]
@@ -26,6 +28,9 @@ pub enum LeetCodeError {
     #[error("failed to read browser cookies: {0}")]
     CookieExtraction(#[from] eyre::Report),
 
+    #[error("failed to parse string as int: {0}")]
+    ParseIntError(#[from] ParseIntError),
+
     /* Handrolled Errors */
     #[error("failed to create dir: {0}")]
     CargoInitFailed(String),
@@ -39,9 +44,9 @@ pub enum LeetCodeError {
     #[error("failed to find cache dir")]
     CacheDir,
 
-    #[error("problem already pulled: use 'pull <slug> --force' for a hard reset")]
-    AlreadyPulled(String),
-
+    // #[error("problem already pulled: use 'pull <slug> --force' for a hard reset")]
+    // AlreadyPulled(String),
+    //
     #[error("requested problem not in cache: either stale, or malformed problem slug")]
     NotInCache,
 
@@ -73,12 +78,12 @@ pub enum LeetCodeError {
     // 404
     #[error("failed to find requested problem: {0}")]
     ProblemNotFound(String),
+    //
+    // // 429
+    // #[error("failed: rate limited")]
+    // TooManyRequests,
 
-    // 429
-    #[error("failed: rate limited")]
-    TooManyRequests,
-
-    // generic catch
-    #[error("failed: http status error {0}")]
-    StatusError(reqwest::StatusCode),
+    // // generic catch
+    // #[error("failed: http status error {0}")]
+    // StatusError(reqwest::StatusCode),
 }

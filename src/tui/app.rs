@@ -3,7 +3,7 @@
 use clap::ValueEnum;
 
 use crate::{
-    cache::{self, backfill_pulled_from_disk, load_cached_problem_list},
+    client::LeetCodeClient,
     commands,
     error::Result,
     models::{LangSlug, ProblemSummary, PulledLanguages},
@@ -74,10 +74,19 @@ impl App {
         Ok(())
     }
 
-    pub fn pull_problem_list(&mut self) -> Result<()> {
-        cache::download_and_save_problem_list()?;
-        self.problems = load_cached_problem_list()?;
-        self.pulled = backfill_pulled_from_disk(&self.problems)?;
+    // pub fn pull_problem_list(&mut self) -> Result<()> {
+    //     cache::download_and_save_problem_list()?;
+    //     self.problems = load_cached_problem_list()?;
+    //     self.pulled = backfill_pulled_from_disk(&self.problems)?;
+
+    //     Ok(())
+    // }
+
+    pub fn pull_daily_challenge(&mut self) -> Result<()> {
+        let client = LeetCodeClient::new()?;
+        let challenge_id = client.fetch_daily_challenge_id()?;
+        self.problem_selected = challenge_id as usize;
+        self.open_language_selection();
 
         Ok(())
     }
